@@ -4,6 +4,10 @@ pub enum OpCode {
     Return,
     Constant,
     Negate,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 impl From<OpCode> for u8 {
@@ -23,6 +27,10 @@ impl TryFrom<u8> for OpCode {
             0 => Ok(OpCode::Return),
             1 => Ok(OpCode::Constant),
             2 => Ok(OpCode::Negate),
+            3 => Ok(OpCode::Add),
+            4 => Ok(OpCode::Subtract),
+            5 => Ok(OpCode::Multiply),
+            6 => Ok(OpCode::Divide),
             _ => Err(Error::UnknownOpCode),
         }
     }
@@ -108,6 +116,22 @@ impl Chunk {
             Ok(OpCode::Negate) => {
                 offset += 1;
                 format!("{}", "OP_NEGATE")
+            }
+            Ok(OpCode::Add) => {
+                offset += 1;
+                format!("{}", "OP_ADD")
+            }
+            Ok(OpCode::Subtract) => {
+                offset += 1;
+                format!("{}", "OP_SUBTRACT")
+            }
+            Ok(OpCode::Multiply) => {
+                offset += 1;
+                format!("{}", "OP_MULTIPLY")
+            }
+            Ok(OpCode::Divide) => {
+                offset += 1;
+                format!("{}", "OP_DIVIDE")
             }
             Ok(OpCode::Constant) => {
                 let constant = &self.code[offset + 1];

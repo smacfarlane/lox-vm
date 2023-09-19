@@ -52,6 +52,26 @@ impl<'a> VM<'a> {
                         self.stack.push(-value);
                     }
                 }
+                Ok(OpCode::Add) => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(a + b);
+                }
+                Ok(OpCode::Subtract) => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(a - b);
+                }
+                Ok(OpCode::Multiply) => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(a * b);
+                }
+                Ok(OpCode::Divide) => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(a / b);
+                }
                 Ok(OpCode::Constant) => {
                     let constant = self.chunk.read_constant(self.chunk.code[self.ip] as usize);
                     self.ip += 1;
