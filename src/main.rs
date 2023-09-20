@@ -1,4 +1,7 @@
 mod chunk;
+mod error;
+mod scanner;
+mod token;
 mod vm;
 
 use crate::chunk::{Chunk, OpCode};
