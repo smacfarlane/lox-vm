@@ -1,5 +1,7 @@
 mod chunk;
+mod compiler;
 mod error;
+mod parse;
 mod scanner;
 mod token;
 mod vm;
@@ -13,29 +15,9 @@ static LOX_TRACE_EXECUTION: OnceLock<bool> = OnceLock::new();
 
 fn main() {
     let _ = LOX_TRACE_EXECUTION.set(env::var(LOX_TRACE_EXECUTION_VAR).is_ok());
-    let mut chunk = Chunk::new();
 
-    let constant = chunk.add_constant(1.2);
-    chunk.write(OpCode::Constant, 1);
-    chunk.write(constant, 1);
-
-    let constant = chunk.add_constant(3.4);
-    chunk.write(OpCode::Constant, 1);
-    chunk.write(constant, 1);
-
-    chunk.write(OpCode::Add, 1);
-
-    let constant = chunk.add_constant(5.6);
-    chunk.write(OpCode::Constant, 1);
-    chunk.write(constant, 1);
-
-    chunk.write(OpCode::Divide, 1);
-    chunk.write(OpCode::Negate, 1);
-    chunk.write(OpCode::Return, 1);
-
-    // chunk.disassemble("test");
-
-    match crate::vm::VM::interpret(&chunk) {
+    let source = String::from("(-1 + 2) * 3 - -4");
+    match crate::vm::VM::interpret(source) {
         Ok(()) => {
             println!("execution finished successfully")
         }

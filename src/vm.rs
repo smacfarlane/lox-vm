@@ -16,11 +16,13 @@ pub enum InterpretError {
 }
 
 impl<'a> VM<'a> {
-    pub fn interpret(chunk: &'a Chunk) -> Result<(), InterpretError> {
+    pub fn interpret(source: String) -> Result<(), InterpretError> {
+        let chunk = crate::compiler::compile(source).map_err(|_| InterpretError::Compile)?;
+
         let mut vm = VM {
-            chunk,
+            chunk: &chunk,
             ip: 0,
-            stack: Vec::with_capacity(STACK_MAX as usize),
+            stack: Vec::with_capacity(STACK_MAX as usize), // TODO: This is a "soft max"
         };
 
         vm.run()

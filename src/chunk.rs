@@ -1,4 +1,9 @@
+use anyhow::{anyhow, Result};
+
+const MAX_CONSTANTS: u8 = u8::MAX;
+
 // TODO: Move to module
+#[derive(Debug)]
 #[repr(u8)]
 pub enum OpCode {
     Return,
@@ -36,11 +41,10 @@ impl TryFrom<u8> for OpCode {
     }
 }
 
-#[derive(Debug)]
 pub struct Chunk {
     pub code: Vec<u8>,
     constants: Array<Value>,
-    lines: Vec<u8>,
+    lines: Vec<usize>,
 }
 
 pub type Value = f64;
@@ -57,6 +61,10 @@ impl<T> Array<T> {
     pub fn write(&mut self, value: T) {
         self.values.push(value);
     }
+
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
 }
 
 impl Chunk {
@@ -71,16 +79,19 @@ impl Chunk {
     pub fn write<T, U>(&mut self, byte: T, line: U)
     where
         T: Into<u8>,
-        U: Into<u8>,
+        U: Into<usize>,
     {
         self.code.push(byte.into());
         self.lines.push(line.into());
     }
 
     // TODO: value: dyn Into<Value>
-    pub fn add_constant(&mut self, value: Value) -> u8 {
+    pub fn add_constant(&mut self, value: Value) -> Result<u8> {
+        if self.constants.len() >= MAX_CONSTANTS as usize {
+            return Err(anyhow!("too many constants in this chunk"));
+        }
         self.constants.write(value);
-        self.constants.values.len() as u8 - 1 // TODO: unsafe
+        Ok(self.constants.values.len() as u8 - 1)
     }
 
     pub fn read_constant(&self, loc: usize) -> Value {
