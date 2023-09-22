@@ -16,7 +16,8 @@ static LOX_TRACE_EXECUTION: OnceLock<bool> = OnceLock::new();
 fn main() {
     let _ = LOX_TRACE_EXECUTION.set(env::var(LOX_TRACE_EXECUTION_VAR).is_ok());
 
-    let source = String::from("(-1 + 2) * 3 - -4");
+    // let source = String::from("(-1 + 2) * 3 - -4");
+    let source = String::from("!(5 - 4 > 3 * 2 == !nil)");
     match crate::vm::VM::interpret(source) {
         Ok(()) => {
             println!("execution finished successfully")

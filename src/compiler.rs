@@ -82,10 +82,27 @@ impl Compiler {
             .clone()
             .expect("expected previous chunk")
             .lexeme;
-        let value: Value = value
+        let value: f64 = value
             .parse()
             .expect(&format!("unable to convert token to float {}", value));
-        let _ = self.emit_constant(value);
+
+        let _ = self.emit_constant(Value::Number(value));
+    }
+
+    fn literal(&mut self) {
+        let tt = self
+            .parser
+            .previous
+            .clone()
+            .expect("expected previous chunk")
+            .token_type;
+
+        match tt {
+            TokenType::False => self.emit_byte(OpCode::False),
+            TokenType::Nil => self.emit_byte(OpCode::Nil),
+            TokenType::True => self.emit_byte(OpCode::True),
+            _ => unreachable!(),
+        }
     }
 
     fn expression(&mut self) {
@@ -109,6 +126,7 @@ impl Compiler {
 
         match operator_type {
             TokenType::Minus => self.emit_byte(OpCode::Negate),
+            TokenType::Bang => self.emit_byte(OpCode::Not),
             _ => unreachable!(),
         }
     }
@@ -129,7 +147,17 @@ impl Compiler {
             TokenType::Minus => self.emit_byte(OpCode::Subtract),
             TokenType::Star => self.emit_byte(OpCode::Multiply),
             TokenType::Slash => self.emit_byte(OpCode::Divide),
-            _ => unreachable!(),
+            TokenType::BangEqual => self.emit_bytes(OpCode::Equal, OpCode::Not),
+            TokenType::Equal => self.emit_byte(OpCode::Equal),
+            TokenType::EqualEqual => self.emit_byte(OpCode::Equal),
+            TokenType::Greater => self.emit_byte(OpCode::Greater),
+            TokenType::GreaterEqual => self.emit_bytes(OpCode::Less, OpCode::Not),
+            TokenType::Less => self.emit_byte(OpCode::Equal),
+            TokenType::LessEqual => self.emit_bytes(OpCode::Greater, OpCode::Not),
+            _ => {
+                dbg!(operator_type);
+                unreachable!()
+            }
         }
     }
 
@@ -178,6 +206,7 @@ impl Compiler {
                 self.error("expected expression");
             }
             ParseFn::Number => self.number(),
+            ParseFn::Literal => self.literal(),
             ParseFn::Binary => self.binary(),
             ParseFn::Unary => self.unary(),
             ParseFn::Grouping => self.grouping(),
@@ -197,6 +226,7 @@ impl Compiler {
                     self.error("expected expression");
                 }
                 ParseFn::Number => self.number(),
+                ParseFn::Literal => self.literal(),
                 ParseFn::Binary => self.binary(),
                 ParseFn::Unary => self.unary(),
                 ParseFn::Grouping => self.grouping(),
@@ -250,5 +280,17 @@ mod test {
         let chunk = compile(source).unwrap();
 
         assert_eq!(vec![1, 0, 2, 1, 1, 3, 1, 2, 5, 1, 3, 2, 4, 0], chunk.code);
+    }
+
+    #[test]
+    fn logic() {
+        let source = String::from("!(5 - 4 > 3 * 2 == !nil)");
+
+        let chunk = compile(source).unwrap();
+
+        assert_eq!(
+            vec![1, 0, 1, 1, 8, 1, 2, 1, 3, 9, 12, 2, 6, 11, 6, 0],
+            chunk.code
+        );
     }
 }

@@ -64,6 +64,7 @@ pub enum ParseFn {
     Grouping,
     Unary,
     Number,
+    Literal,
     None,
 }
 
@@ -134,14 +135,14 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::Factor,
         },
         TokenType::Bang => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::Unary,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },
         TokenType::BangEqual => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Equality,
         },
         TokenType::Equal => ParseRule {
             prefix: ParseFn::None,
@@ -150,28 +151,28 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
         },
         TokenType::EqualEqual => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Equality,
         },
         TokenType::Greater => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Comparison,
         },
         TokenType::GreaterEqual => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Comparison,
         },
         TokenType::Less => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Comparison,
         },
         TokenType::LessEqual => ParseRule {
             prefix: ParseFn::None,
-            infix: ParseFn::None,
-            precedence: Precedence::None,
+            infix: ParseFn::Binary,
+            precedence: Precedence::Comparison,
         },
         TokenType::Identifier => ParseRule {
             prefix: ParseFn::None,
@@ -204,7 +205,7 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::None,
         },
         TokenType::False => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::Literal,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },
@@ -224,7 +225,7 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::None,
         },
         TokenType::Nil => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::Literal,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },
@@ -254,7 +255,7 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::None,
         },
         TokenType::True => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::Literal,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },

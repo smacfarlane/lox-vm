@@ -19,7 +19,6 @@ pub enum ParseError {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum EvaluationError {
-    // TODO: Interpreter? Object?
     #[error("operands must be numbers {0}")]
     Comparision(String),
     #[error("operand must be number")]
@@ -36,6 +35,20 @@ pub enum RuntimeError {
     UndefinedVariable(String),
     #[error("unexpected token: '{0}'")]
     UnexpectedToken(crate::token::Token),
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum InterpretError {
+    #[error("compile error")]
+    Compile,
+    #[error("runtime error")]
+    Runtime,
+}
+
+#[derive(Error, Debug)]
+pub enum ChunkError {
+    #[error("unknown opcode: '{0}'")]
+    UnknownOpCode(u8),
 }
 
 impl std::fmt::Display for ErrorLoc {

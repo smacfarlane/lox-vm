@@ -1,6 +1,8 @@
 use crate::chunk::{Chunk, OpCode, Value};
-
+use crate::error::InterpretError;
 use crate::LOX_TRACE_EXECUTION;
+
+use anyhow::Result;
 
 const STACK_MAX: u32 = 256;
 
@@ -10,13 +12,8 @@ pub struct VM<'a> {
     stack: Vec<Value>,
 }
 
-pub enum InterpretError {
-    Compile,
-    Runtime,
-}
-
 impl<'a> VM<'a> {
-    pub fn interpret(source: String) -> Result<(), InterpretError> {
+    pub fn interpret(source: String) -> Result<()> {
         let chunk = crate::compiler::compile(source).map_err(|_| InterpretError::Compile)?;
 
         let mut vm = VM {
@@ -28,7 +25,11 @@ impl<'a> VM<'a> {
         vm.run()
     }
 
-    pub fn run(&mut self) -> Result<(), InterpretError> {
+    fn runtime_error(&mut self) -> Result<()> {
+        Err(InterpretError::Runtime.into())
+    }
+
+    pub fn run(&mut self) -> Result<()> {
         loop {
             if LOX_TRACE_EXECUTION.get() == Some(&true) {
                 print!("          ");
@@ -42,44 +43,89 @@ impl<'a> VM<'a> {
             let instruction = self.chunk.code[self.ip];
             self.ip += 1;
 
-            match instruction.try_into() {
-                Ok(OpCode::Return) => {
+            let opcode = instruction.try_into()?;
+            match opcode {
+                OpCode::Return => {
                     if let Some(v) = self.stack.pop() {
                         println!("{}", v)
                     }
                     break;
                 }
-                Ok(OpCode::Negate) => {
+                OpCode::Negate => {
                     if let Some(value) = self.stack.pop() {
-                        self.stack.push(-value);
+                        match -value {
+                            Ok(value) => self.stack.push(value),
+                            Err(_) => self.runtime_error()?,
+                        }
                     }
                 }
-                Ok(OpCode::Add) => {
+                OpCode::Add => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(a + b);
+                    match a + b {
+                        Ok(sum) => self.stack.push(sum),
+                        Err(_) => self.runtime_error()?,
+                    }
                 }
-                Ok(OpCode::Subtract) => {
+                OpCode::Subtract => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(a - b);
+                    match a - b {
+                        Ok(diff) => self.stack.push(diff),
+                        Err(_) => self.runtime_error()?,
+                    }
                 }
-                Ok(OpCode::Multiply) => {
+                OpCode::Multiply => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(a * b);
+                    match a * b {
+                        Ok(prod) => self.stack.push(prod),
+                        Err(_) => self.runtime_error()?,
+                    }
                 }
-                Ok(OpCode::Divide) => {
+                OpCode::Divide => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(a / b);
+                    match a / b {
+                        Ok(quot) => self.stack.push(quot),
+                        Err(_) => self.runtime_error()?,
+                    }
                 }
-                Ok(OpCode::Constant) => {
+                OpCode::Constant => {
                     let constant = self.chunk.read_constant(self.chunk.code[self.ip] as usize);
                     self.ip += 1;
                     self.stack.push(constant);
                 }
-                Err(_) => return Err(InterpretError::Runtime),
+                OpCode::Nil => {
+                    self.stack.push(Value::Nil);
+                }
+                OpCode::True => {
+                    self.stack.push(Value::Bool(true));
+                }
+                OpCode::False => {
+                    self.stack.push(Value::Bool(false));
+                }
+                OpCode::Not => {
+                    let value = self.stack.pop().unwrap();
+                    self.stack.push(Value::Bool(value.is_falsey()))
+                }
+                OpCode::Equal => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    self.stack.push(Value::Bool(a == b));
+                }
+                OpCode::Greater => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+
+                    self.stack.push(Value::Bool(a > b));
+                }
+                OpCode::Less => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+
+                    self.stack.push(Value::Bool(a < b));
+                }
             }
         }
 
