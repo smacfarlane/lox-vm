@@ -262,24 +262,24 @@ mod test {
         let source = String::from("-12");
         let chunk = compile(source).unwrap();
 
-        assert_eq!(vec![1, 0, 2, 0], chunk.code);
+        assert_eq!(vec![1, 0, 5, 0], chunk.code);
     }
     #[test]
     fn arithmatic() {
         let source = String::from("1 + 2");
         let chunk = compile(source).unwrap();
 
-        assert_eq!(vec![1, 0, 1, 1, 3, 0], chunk.code);
+        assert_eq!(vec![1, 0, 1, 1, 7, 0], chunk.code);
 
         let source = String::from("-1 + 2");
         let chunk = compile(source).unwrap();
 
-        assert_eq!(vec![1, 0, 2, 1, 1, 3, 0], chunk.code);
+        assert_eq!(vec![1, 0, 5, 1, 1, 7, 0], chunk.code);
 
         let source = String::from("(-1 + 2) * 3 - -4");
         let chunk = compile(source).unwrap();
 
-        assert_eq!(vec![1, 0, 2, 1, 1, 3, 1, 2, 5, 1, 3, 2, 4, 0], chunk.code);
+        assert_eq!(vec![1, 0, 5, 1, 1, 7, 1, 2, 9, 1, 3, 5, 8, 0], chunk.code);
     }
 
     #[test]

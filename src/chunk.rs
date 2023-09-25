@@ -4,7 +4,7 @@ use crate::error::{ChunkError, EvaluationError};
 
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 
-const MAX_CONSTANTS: u8 = u8::MAX;
+const MAX_CONSTANTS: usize = 256;
 
 // TODO: Move to module
 #[derive(Debug)]
@@ -61,8 +61,9 @@ pub struct Chunk {
     lines: Vec<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Value {
+    #[default]
     Nil,
     Bool(bool),
     Number(f64),
@@ -169,21 +170,35 @@ impl Not for &Value {
 }
 
 #[derive(Debug)]
-pub struct Array<T> {
-    values: Vec<T>,
+pub struct Array<T>
+where
+    T: Copy + Default,
+{
+    head: usize,
+    values: [T; MAX_CONSTANTS],
 }
 
-impl<T> Array<T> {
+impl<T> Array<T>
+where
+    T: Copy + Default,
+{
     pub fn new() -> Array<T> {
-        Array { values: Vec::new() }
+        Array {
+            values: [T::default(); MAX_CONSTANTS],
+            head: 0,
+        }
     }
 
     pub fn write(&mut self, value: T) {
-        self.values.push(value);
+        if self.head >= MAX_CONSTANTS {
+            todo!()
+        };
+        self.values[self.head] = value;
+        self.head += 1;
     }
 
     pub fn len(&self) -> usize {
-        self.values.len()
+        self.head
     }
 }
 
@@ -211,7 +226,7 @@ impl Chunk {
             return Err(anyhow!("too many constants in this chunk"));
         }
         self.constants.write(value);
-        Ok(self.constants.values.len() as u8 - 1)
+        Ok(self.constants.len() as u8 - 1)
     }
 
     pub fn read_constant(&self, loc: usize) -> Value {
