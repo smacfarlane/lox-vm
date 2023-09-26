@@ -72,7 +72,7 @@ impl Compiler {
     }
 
     fn scan_token(&mut self) -> Result<Token> {
-        self.scanner.scan_token()
+        dbg!(self.scanner.scan_token())
     }
 
     fn number(&mut self) {
@@ -87,6 +87,20 @@ impl Compiler {
             .expect(&format!("unable to convert token to float {}", value));
 
         let _ = self.emit_constant(Value::Number(value));
+    }
+
+    fn string(&mut self) {
+        let value = self
+            .parser
+            .previous
+            .clone()
+            .expect("expected previous chunk")
+            .lexeme;
+        // Strip "" from the Token representation
+        let value = &value[1..value.len() - 1];
+
+        let value = Value::from_string(value.to_string());
+        let _ = self.emit_constant(value);
     }
 
     fn literal(&mut self) {
@@ -207,6 +221,7 @@ impl Compiler {
             }
             ParseFn::Number => self.number(),
             ParseFn::Literal => self.literal(),
+            ParseFn::String => self.string(),
             ParseFn::Binary => self.binary(),
             ParseFn::Unary => self.unary(),
             ParseFn::Grouping => self.grouping(),
@@ -227,6 +242,7 @@ impl Compiler {
                 }
                 ParseFn::Number => self.number(),
                 ParseFn::Literal => self.literal(),
+                ParseFn::String => self.string(),
                 ParseFn::Binary => self.binary(),
                 ParseFn::Unary => self.unary(),
                 ParseFn::Grouping => self.grouping(),

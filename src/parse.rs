@@ -65,6 +65,7 @@ pub enum ParseFn {
     Unary,
     Number,
     Literal,
+    String,
     None,
 }
 
@@ -180,7 +181,7 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::None,
         },
         TokenType::String => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::String,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },

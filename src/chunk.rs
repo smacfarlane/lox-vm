@@ -3,6 +3,7 @@ use anyhow::{anyhow, Result};
 use crate::error::{ChunkError, EvaluationError};
 
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
+use std::ptr::NonNull;
 
 const MAX_CONSTANTS: usize = 256;
 
@@ -61,12 +62,13 @@ pub struct Chunk {
     lines: Vec<usize>,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub enum Value {
     #[default]
     Nil,
     Bool(bool),
     Number(f64),
+    Obj(Box<Obj>),
 }
 
 impl Value {
@@ -77,6 +79,25 @@ impl Value {
             _ => false,
         }
     }
+
+    pub fn from_string(s: String) -> Value {
+        let obj = Obj {
+            obj_type: ObjType::String(s),
+            objects: None,
+        };
+        Value::Obj(Box::new(obj))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Obj {
+    obj_type: ObjType,
+    objects: Option<Box<Obj>>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum ObjType {
+    String(String),
 }
 
 impl std::fmt::Display for Value {
@@ -85,6 +106,17 @@ impl std::fmt::Display for Value {
             Self::Number(ref n) => write!(f, "{}", n),
             Self::Bool(ref b) => write!(f, "{}", b),
             Self::Nil => write!(f, "nil"),
+            Self::Obj(obj) => {
+                write!(f, "{}", *obj)
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for Obj {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match &self.obj_type {
+            ObjType::String(s) => write!(f, "{}", s),
         }
     }
 }
@@ -95,11 +127,12 @@ impl Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Number(a), Self::Number(b)) => Ok(Self::Number(a + b)),
-            // (Self::String(a), Self::String(b)) => Ok(Self::String(a + &b)),
-            // (Self::String(_), _) | (_, Self::String(_)) => {
-            //     Err(EvaluationError::StringConcatination.into())
-            // }
-            // (Self::Number(a), Self::Nil) | (Self::Nil, Self::Number(a)) => Ok(Self::Number(a)), // nil -> 0 in Lox
+            (Self::Obj(a), Self::Obj(b)) => match (a.obj_type, b.obj_type) {
+                (ObjType::String(a), ObjType::String(b)) => Ok(Self::Obj(Box::new(Obj {
+                    obj_type: ObjType::String(a + &b),
+                    objects: None,
+                }))),
+            },
             (_, _) => Err(EvaluationError::Arithmatic("add".to_string()).into()),
         }
     }
@@ -172,7 +205,7 @@ impl Not for &Value {
 #[derive(Debug)]
 pub struct Array<T>
 where
-    T: Copy + Default,
+    T: Default,
 {
     head: usize,
     values: [T; MAX_CONSTANTS],
@@ -180,11 +213,11 @@ where
 
 impl<T> Array<T>
 where
-    T: Copy + Default,
+    T: Default,
 {
     pub fn new() -> Array<T> {
         Array {
-            values: [T::default(); MAX_CONSTANTS],
+            values: std::array::from_fn(|_| T::default()),
             head: 0,
         }
     }
