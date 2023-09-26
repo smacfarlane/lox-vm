@@ -3,7 +3,6 @@ use anyhow::{anyhow, Result};
 use crate::error::{ChunkError, EvaluationError};
 
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
-use std::ptr::NonNull;
 
 const MAX_CONSTANTS: usize = 256;
 
@@ -25,6 +24,11 @@ pub enum OpCode {
     Equal,
     Greater,
     Less,
+    Print,
+    Pop,
+    DefineGlobal,
+    GetGlobal,
+    SetGlobal,
 }
 
 impl From<OpCode> for u8 {
@@ -51,6 +55,11 @@ impl TryFrom<u8> for OpCode {
             11 => Ok(OpCode::Equal),
             12 => Ok(OpCode::Greater),
             13 => Ok(OpCode::Less),
+            14 => Ok(OpCode::Print),
+            15 => Ok(OpCode::Pop),
+            16 => Ok(OpCode::DefineGlobal),
+            17 => Ok(OpCode::GetGlobal),
+            18 => Ok(OpCode::SetGlobal),
             n => Err(ChunkError::UnknownOpCode(n).into()),
         }
     }
@@ -345,6 +354,39 @@ impl Chunk {
             Ok(OpCode::Less) => {
                 todo!()
             }
+            Ok(OpCode::Print) => {
+                offset += 1;
+                format!("{}", "OP_PRINT")
+            }
+            Ok(OpCode::Pop) => {
+                offset += 1;
+                format!("{}", "OP_POP")
+            }
+            Ok(OpCode::DefineGlobal) => {
+                let constant = &self.code[offset + 1];
+                offset += 2;
+                format!(
+                    "{:<16} {:>4} '{}'",
+                    "OP_DEFINE_GLOBAL", constant, self.constants.values[*constant as usize]
+                )
+            }
+            Ok(OpCode::GetGlobal) => {
+                let constant = &self.code[offset + 1];
+                offset += 2;
+                format!(
+                    "{:<16} {:>4} '{}'",
+                    "OP_GET_GLOBAL", constant, self.constants.values[*constant as usize]
+                )
+            }
+            Ok(OpCode::SetGlobal) => {
+                let constant = &self.code[offset + 1];
+                offset += 2;
+                format!(
+                    "{:<16} {:>4} '{}'",
+                    "OP_SET_GLOBAL", constant, self.constants.values[*constant as usize]
+                )
+            }
+
             Err(_) => format!("unknown opcode {}", instruction),
         };
 

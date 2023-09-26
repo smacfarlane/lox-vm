@@ -133,7 +133,6 @@ impl Scanner {
             .into());
         }
         let _ = self.next();
-        dbg!(&self);
 
         Ok(self.make_token(TokenType::String))
     }

@@ -18,7 +18,17 @@ fn main() {
 
     // let source = String::from("(-1 + 2) * 3 - -4");
     // let source = String::from("!(5 - 4 > 3 * 2 == !nil)");
-    let source = String::from(r#""hello" + " world""#);
+    // let source = String::from(r#"print "hello" + " world";"#);
+    // let source = String::from("var a_unmber = 1;");
+    //
+    let source = r#"var breakfast = "beignets";
+var beverage = "cafe au lait";
+breakfast = "beignets with " + beverage;
+monkey = "bar";
+
+print breakfast;
+    "#
+    .to_string();
     match crate::vm::VM::interpret(source) {
         Ok(()) => {
             println!("execution finished successfully")

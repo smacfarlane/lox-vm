@@ -63,6 +63,7 @@ pub enum ParseFn {
     Binary,
     Grouping,
     Unary,
+    Variable,
     Number,
     Literal,
     String,
@@ -176,7 +177,7 @@ pub fn parse_rule(tt: &TokenType) -> ParseRule {
             precedence: Precedence::Comparison,
         },
         TokenType::Identifier => ParseRule {
-            prefix: ParseFn::None,
+            prefix: ParseFn::Variable,
             infix: ParseFn::None,
             precedence: Precedence::None,
         },

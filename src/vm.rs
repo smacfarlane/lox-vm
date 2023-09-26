@@ -1,8 +1,10 @@
 use crate::chunk::{Chunk, OpCode, Value};
-use crate::error::InterpretError;
+use crate::error::{InterpretError, RuntimeError};
 use crate::LOX_TRACE_EXECUTION;
 
 use anyhow::Result;
+
+use std::collections::HashMap;
 
 const STACK_MAX: u32 = 256;
 
@@ -10,6 +12,7 @@ pub struct VM<'a> {
     chunk: &'a Chunk,
     ip: usize,
     stack: Vec<Value>,
+    globals: HashMap<String, Value>,
 }
 
 impl<'a> VM<'a> {
@@ -20,6 +23,7 @@ impl<'a> VM<'a> {
             chunk: &chunk,
             ip: 0,
             stack: Vec::with_capacity(STACK_MAX as usize), // TODO: This is a "soft max"
+            globals: HashMap::new(),
         };
 
         vm.run()
@@ -30,6 +34,7 @@ impl<'a> VM<'a> {
     }
 
     pub fn run(&mut self) -> Result<()> {
+        self.chunk.disassemble("RUN");
         loop {
             if LOX_TRACE_EXECUTION.get() == Some(&true) {
                 print!("          ");
@@ -43,14 +48,8 @@ impl<'a> VM<'a> {
             let instruction = self.chunk.code[self.ip];
             self.ip += 1;
 
-            let opcode = instruction.try_into()?;
-            match opcode {
-                OpCode::Return => {
-                    if let Some(v) = self.stack.pop() {
-                        println!("{}", v)
-                    }
-                    break;
-                }
+            match instruction.try_into()? {
+                OpCode::Return => return Ok(()),
                 OpCode::Negate => {
                     if let Some(value) = self.stack.pop() {
                         match -value {
@@ -126,9 +125,43 @@ impl<'a> VM<'a> {
 
                     self.stack.push(Value::Bool(a < b));
                 }
+                OpCode::Print => {
+                    let a = self.stack.pop().unwrap();
+                    println!("{}", a);
+                }
+                OpCode::Pop => {
+                    let _ = self.stack.pop();
+                }
+                OpCode::DefineGlobal => {
+                    let name = self.chunk.read_constant(self.chunk.code[self.ip] as usize);
+                    self.ip += 1;
+                    self.globals
+                        .insert(name.to_string(), self.stack.last().unwrap().to_owned());
+
+                    let _ = self.stack.pop();
+                }
+                OpCode::GetGlobal => {
+                    let name = self.chunk.read_constant(self.chunk.code[self.ip] as usize);
+                    self.ip += 1;
+                    match self.globals.get(&name.to_string()) {
+                        Some(value) => self.stack.push(value.to_owned()),
+                        None => self.runtime_error()?,
+                    }
+                }
+                OpCode::SetGlobal => {
+                    let name = self.chunk.read_constant(self.chunk.code[self.ip] as usize);
+                    self.ip += 1;
+
+                    if !self.globals.contains_key(&name.to_string()) {
+                        self.runtime_error()?
+                    }
+
+                    self.globals
+                        .insert(name.to_string(), self.stack.last().unwrap().to_owned());
+
+                    let _ = self.stack.pop();
+                }
             }
         }
-
-        Ok(())
     }
 }
